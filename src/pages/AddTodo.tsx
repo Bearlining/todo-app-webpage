@@ -1,0 +1,188 @@
+import React, { useState } from 'react';
+import { X, Calendar, Tag } from 'lucide-react';
+import { useTodo } from '../context/TodoContext';
+import { Button } from '../components/ui/button';
+import { Input } from '../components/ui/input';
+import { PRIORITY_COLORS } from '../types/todo';
+
+interface AddTodoProps {
+  onClose: () => void;
+}
+
+export function AddTodo({ onClose }: AddTodoProps) {
+  const { addTodo, state } = useTodo();
+
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [priority, setPriority] = useState<'low' | 'medium' | 'high'>('medium');
+  const [category, setCategory] = useState(state.categories[0]?.id || 'other');
+  const [dueDate, setDueDate] = useState('');
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!title.trim()) {
+      alert('请输入标题');
+      return;
+    }
+
+    addTodo({
+      title: title.trim(),
+      description: description.trim(),
+      isCompleted: false,
+      priority,
+      category,
+      tags: [],
+      isArchived: false,
+      archivedAt: null,
+      repeatType: 'none',
+      repeatEndDate: null,
+      dueDate: dueDate ? new Date(dueDate) : null,
+      reminderTime: null,
+    });
+
+    onClose();
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center">
+      {/* 背景遮罩 */}
+      <div
+        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+        onClick={onClose}
+      />
+
+      {/* 弹窗内容 */}
+      <div className="relative w-full max-w-md bg-white rounded-t-3xl shadow-2xl animate-slide-up max-h-[90vh] overflow-y-auto">
+        {/* 头部 */}
+        <div className="sticky top-0 bg-white/95 backdrop-blur-md border-b border-pink-100 px-6 py-4 flex items-center justify-between z-10">
+          <h2 className="text-xl font-bold text-gray-800">添加待办</h2>
+          <button
+            onClick={onClose}
+            className="p-2 rounded-full hover:bg-pink-50 transition-colors"
+          >
+            <X className="w-5 h-5 text-gray-400" />
+          </button>
+        </div>
+
+        {/* 表单 */}
+        <form onSubmit={handleSubmit} className="p-6 space-y-6">
+          {/* 标题 */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              标题 <span className="text-red-400">*</span>
+            </label>
+            <Input
+              placeholder="输入待办事项标题"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              className="text-base"
+            />
+          </div>
+
+          {/* 描述 */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              描述
+            </label>
+            <textarea
+              placeholder="添加详细描述..."
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              className="w-full h-24 px-4 py-3 rounded-xl border border-pink-200 bg-white/60 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-pink-300 focus:border-transparent transition-all duration-200 backdrop-blur-sm resize-none"
+            />
+          </div>
+
+          {/* 优先级 */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              优先级
+            </label>
+            <div className="flex gap-2">
+              {[
+                { key: 'high', label: '高', color: PRIORITY_COLORS.high },
+                { key: 'medium', label: '中', color: PRIORITY_COLORS.medium },
+                { key: 'low', label: '低', color: PRIORITY_COLORS.low },
+              ].map((item) => (
+                <button
+                  key={item.key}
+                  type="button"
+                  onClick={() => setPriority(item.key as 'low' | 'medium' | 'high')}
+                  className={`
+                    flex-1 py-2.5 rounded-xl text-sm font-medium transition-all duration-200
+                    ${priority === item.key
+                      ? 'text-white shadow-md transform scale-105'
+                      : 'bg-white/60 text-gray-600 hover:bg-white'
+                    }
+                  `}
+                  style={{
+                    backgroundColor: priority === item.key ? item.color : undefined,
+                  }}
+                >
+                  {item.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* 分类 */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+              <Tag className="w-4 h-4 text-pink-400" />
+              分类
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {state.categories.map((cat) => (
+                <button
+                  key={cat.id}
+                  type="button"
+                  onClick={() => setCategory(cat.id)}
+                  className={`
+                    px-4 py-2 rounded-full text-sm font-medium transition-all duration-200
+                    ${category === cat.id
+                      ? 'text-white shadow-md transform scale-105'
+                      : 'bg-white/60 text-gray-600 hover:bg-white'
+                    }
+                  `}
+                  style={{
+                    backgroundColor: category === cat.id ? cat.color : undefined,
+                  }}
+                >
+                  {cat.name}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* 截止日期 */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+              <Calendar className="w-4 h-4 text-mint-400" />
+              截止日期
+            </label>
+            <Input
+              type="date"
+              value={dueDate}
+              onChange={(e) => setDueDate(e.target.value)}
+              className="text-gray-600"
+            />
+          </div>
+
+          {/* 提交按钮 */}
+          <div className="pt-4">
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={!title.trim()}
+            >
+              添加待办
+            </Button>
+          </div>
+        </form>
+
+        {/* 底部安全区域 */}
+        <div className="h-safe-bottom" />
+      </div>
+    </div>
+  );
+}
